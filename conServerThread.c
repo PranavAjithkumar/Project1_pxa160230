@@ -7,7 +7,7 @@
 /*
     CONCURRENT SERVER: THREAD EXAMPLE
     Must be linked with the "pthread" library also, e.g.:
-       cc -o example example.c -lnsl -lsocket -lpthread 
+       cc -o example example.c -lnsl -lsocket -lpthread
 
     This program creates a connection socket, binds a name to it, then
     listens for connections to the sockect.  When a connection is made,
@@ -40,10 +40,10 @@ void *serverThread(void *parmPtr) {
         printf("Accept failed\n");
         return(0);    /* Exit thread */
     }
-    
+
     /* Receive messages from sender... */
     while ((recievedMsgLen=
-            read(PARMPTR->connectionDesc,messageBuf,sizeof(messageBuf)-1)) > 0) 
+            read(PARMPTR->connectionDesc,messageBuf,sizeof(messageBuf)-1)) > 0)
     {
         recievedMsgLen[messageBuf] = '\0';
         printf("Message: %s\n",messageBuf);
@@ -57,15 +57,29 @@ void *serverThread(void *parmPtr) {
     return(0);                       /* Exit thread */
 }
 
-main () {
+//signature changed main to return integer and include arguments parameter argc and **argv
+int main (int argc, char **argv) {
     int listenDesc;
     struct sockaddr_in myAddr;
     struct serverParm *parmPtr;
     int connectionDesc;
     pthread_t threadID;
 
+    //Printing the number of Arguments Passed
+    printf("Number of Arguments Passed    : %d\n",argc);
+
     /* For testing purposes, make sure process will terminate eventually */
-    alarm(120);  /* Terminate in 120 seconds */
+   // alarm(120);  /* Terminate in 120 seconds */
+
+
+    //I added argument validation
+    if (argc !=2) {
+        perror("Usage: Port # of the Sever to Bind <Server Port>");
+        exit(1);
+    }
+
+    //Printing the port trying to connect
+     printf("Connecting to Port Number :%s\n", argv[1]);
 
     /* Create socket from which to read */
     if ((listenDesc = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
@@ -73,11 +87,14 @@ main () {
         exit(1);
     }
 
+     //Overwrite the SERV_PORT with passed argument port number
     /* Create "name" of socket */
     myAddr.sin_family = AF_INET;
     myAddr.sin_addr.s_addr = INADDR_ANY;
-    myAddr.sin_port = htons(PORTNUMBER);
-        
+    myAddr.sin_port = htons((int) strtol(argv[1], (char **)NULL, 10));
+    /* myAddr.sin_port = htons(PORTNUMBER); */
+
+
     if (bind(listenDesc, (struct sockaddr *) &myAddr, sizeof(myAddr)) < 0) {
         perror("bind error");
         exit(1);
@@ -94,7 +111,7 @@ main () {
         /* Create a thread to actually handle this client */
         parmPtr = (struct serverParm *)malloc(sizeof(struct serverParm));
         parmPtr->connectionDesc = connectionDesc;
-        if (pthread_create(&threadID, NULL, serverThread, (void *)parmPtr) 
+        if (pthread_create(&threadID, NULL, serverThread, (void *)parmPtr)
               != 0) {
             perror("Thread create error");
             close(connectionDesc);
